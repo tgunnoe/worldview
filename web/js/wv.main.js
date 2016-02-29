@@ -151,6 +151,7 @@ $(function() {
         ui.proj = wv.proj.ui(models, config);
         ui.sidebar = wv.layers.sidebar(models, config);
         ui.activeLayers = wv.layers.active(models, ui, config);
+        ui.filter = wv.layers.filter(models, ui, config);
         ui.addModal = wv.layers.modal(models, ui, config);
         //ui.addLayers = wv.layers.add(models, ui, config);
         if ( config.startDate ) {

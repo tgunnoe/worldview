@@ -120,8 +120,8 @@ wv.layers.modal = wv.layers.modal || function(models, ui, config) {
             drawCategories();
         }
         else {
-            drawAllLayers();
-            filter();
+            drawMeasurements(config.categories.scientific.All);
+            //filter();
         }
 
         redoScrollbar();
@@ -158,11 +158,40 @@ wv.layers.modal = wv.layers.modal || function(models, ui, config) {
         var $categoryList = $( '<div></div>' )
             .attr( 'id', category.id + '-list' );
 
+        var filteredMeasurements = [];
+        var filteredSources = [];
+
+
+        //var filtered = _.filter(config.measurements, { 'id': 'terra-modis' });
+        //var filtered = ui.filter.filterTreeList([config.measurements], ['aqua-modis']);
+        //console.log(filtered);
+
         //Begin Measurement Level
         _.each( category.measurements, function( measurement, measurementName ) {
 
             var current = config.measurements[measurement];
+            //var filtered = ui.filter.filterTreeList([config.measurements], ['aqua-modis']);
 
+            
+            _.each( current.sources, function( source, sourceName ) {
+                _.each (source.settings, function ( setting ) {
+                    var layer = config.layers[setting];
+                    if (layer.projections[models.proj.selected.id]){
+
+                        var filt = setting.parent;
+                        console.log(filt);
+                        alreadyFiltered = _.contains(filteredMeasurements, measurement);
+                        //console.log(alreadyFiltered);
+                        if(!alreadyFiltered)
+                            filteredMeasurements.push(measurement);
+
+                        //projConfig[measurement][source][setting] = layer;
+                        //filteredMeasurements[measurement.title] = (measurement.title);
+                    }
+                });
+            });
+            //console.log(filteredMeasurements);
+            //            console.log(filteredMeasurements);
             var $measurementHeader = $( '<div></div>' )
                 .attr('id', 'accordion-' + category.id + '-' + current.id );
 
