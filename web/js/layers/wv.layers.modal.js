@@ -177,9 +177,11 @@ wv.layers.modal = wv.layers.modal || function(models, ui, config) {
             _.each( current.sources, function( source, souceName ) {
                 _.each( source.settings, function( setting ) {
                     var layer = config.layers[setting];
-                    var proj = layer.projections;
-                    if(layer.id == setting && Object.keys(proj).indexOf(projection) > -1) {
-                        categoryHasSetting = true;
+                    if(layer) {
+                      var proj = layer.projections;
+                      if(layer.id == setting && Object.keys(proj).indexOf(projection) > -1) {
+                          categoryHasSetting = true;
+                      }
                     }
                 });
             });
@@ -222,9 +224,11 @@ wv.layers.modal = wv.layers.modal || function(models, ui, config) {
             _.each( current.sources, function( source, souceName ) {
                 _.each( source.settings, function( setting ) {
                     var layer = config.layers[setting];
-                    var proj = layer.projections;
-                    if(layer.id == setting && Object.keys(proj).indexOf(projection) > -1) {
-                        measurementHasSetting = true;
+                    if(layer) {
+                        var proj = layer.projections;
+                        if(layer.id == setting && Object.keys(proj).indexOf(projection) > -1) {
+                            measurementHasSetting = true;
+                        }
                     }
                 });
             });
@@ -322,9 +326,11 @@ wv.layers.modal = wv.layers.modal || function(models, ui, config) {
         _.each( current.sources, function( source, souceName ) {
             _.each( source.settings, function( setting ) {
                 var layer = config.layers[setting];
-                var proj = layer.projections;
-                if(layer.id == setting && Object.keys(proj).indexOf(projection) > -1) {
-                    measurementHasSetting = true;
+                if(layer) {
+                    var proj = layer.projections;
+                    if(layer.id == setting && Object.keys(proj).indexOf(projection) > -1) {
+                        measurementHasSetting = true;
+                    }
                 }
             });
         });
@@ -349,9 +355,11 @@ wv.layers.modal = wv.layers.modal || function(models, ui, config) {
             var sourceHasSetting;
             _.each( source.settings, function( setting ) {
                 var layer = config.layers[setting];
-                var proj = layer.projections;
-                if(layer.id == setting && Object.keys(proj).indexOf(projection) > -1) {
-                    sourceHasSetting = true;
+                if(layer) {
+                    var proj = layer.projections;
+                    if(layer.id == setting && Object.keys(proj).indexOf(projection) > -1) {
+                        sourceHasSetting = true;
+                    }
                 }
             });
 
@@ -407,45 +415,47 @@ wv.layers.modal = wv.layers.modal || function(models, ui, config) {
               var layer = config.layers[setting];
 
               // If a setting matches the current projection, then output it.
-              if (layer.id == setting && Object.keys(layer.projections).indexOf(projection) > -1) {
+              if(layer) {
+                if (layer.id == setting && Object.keys(layer.projections).indexOf(projection) > -1) {
 
-                var $wrapper = $('<li></li>').attr('data-layer', encodeURIComponent(layer.id)).attr('value', encodeURIComponent(layer.id)).addClass('measurement-settings-item');
+                  var $wrapper = $('<li></li>').attr('data-layer', encodeURIComponent(layer.id)).attr('value', encodeURIComponent(layer.id)).addClass('measurement-settings-item');
 
-                var $setting = $('<input></input>').attr('type', 'checkbox').addClass('settings-check').attr('id', 'setting-' + layer.id).attr('value', encodeURIComponent(layer.id))
-                //maybe dont need value and data-layer both
-                  .attr('data-layer', encodeURIComponent(layer.id)).on('ifChecked', addLayer).on('ifUnchecked', removeLayer);
+                  var $setting = $('<input></input>').attr('type', 'checkbox').addClass('settings-check').attr('id', 'setting-' + layer.id).attr('value', encodeURIComponent(layer.id))
+                  //maybe dont need value and data-layer both
+                    .attr('data-layer', encodeURIComponent(layer.id)).on('ifChecked', addLayer).on('ifUnchecked', removeLayer);
 
-                if (_.find(model.active, {id: layer.id})) {
-                  $setting.attr("checked", "checked");
-                }
-
-                var $label = $('<label></label>').attr('for', 'setting-' + encodeURIComponent(layer.id)).text(layer.title);
-
-                $wrapper.append($setting).append($label);
-
-                //If this is an orbit track.... put it in the orbit track list
-                if (layer.title.indexOf("Orbital Track") !== -1) {
-                  var orbitTitle;
-                  // The following complex if statement is a placeholder
-                  // for truncating the layer names, until the rest of
-                  // the interface is implemented
-
-                  if (layer.title.indexOf('(') !== -1) {
-                    var regExp = /\(([^)]+)\)/;
-                    var matches = regExp.exec(layer.title);
-                    orbitTitle = matches[1];
+                  if (_.find(model.active, {id: layer.id})) {
+                    $setting.attr("checked", "checked");
                   }
-                  $label.empty().text(orbitTitle);
-                  $sourceOrbits.append($wrapper);
-                } else {
-                  $sourceSettings.append($wrapper);
-                }
-                $wrapper.click(function(e) {
-                  e.stopPropagation();
-                  var $checkbox = $(this).find('input#setting-' + layer.id);
 
-                  $checkbox.iCheck('toggle');
-                });
+                  var $label = $('<label></label>').attr('for', 'setting-' + encodeURIComponent(layer.id)).text(layer.title);
+
+                  $wrapper.append($setting).append($label);
+
+                  //If this is an orbit track.... put it in the orbit track list
+                  if (layer.title.indexOf("Orbital Track") !== -1) {
+                    var orbitTitle;
+                    // The following complex if statement is a placeholder
+                    // for truncating the layer names, until the rest of
+                    // the interface is implemented
+
+                    if (layer.title.indexOf('(') !== -1) {
+                      var regExp = /\(([^)]+)\)/;
+                      var matches = regExp.exec(layer.title);
+                      orbitTitle = matches[1];
+                    }
+                    $label.empty().text(orbitTitle);
+                    $sourceOrbits.append($wrapper);
+                  } else {
+                    $sourceSettings.append($wrapper);
+                  }
+                  $wrapper.click(function(e) {
+                    e.stopPropagation();
+                    var $checkbox = $(this).find('input#setting-' + layer.id);
+
+                    $checkbox.iCheck('toggle');
+                  });
+                }
               }
             });
             //End setting level
