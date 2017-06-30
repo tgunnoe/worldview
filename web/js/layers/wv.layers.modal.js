@@ -540,92 +540,93 @@ wv.layers.modal = wv.layers.modal || function(models, ui, config) {
     _.each(config.layerOrder, function(layerId) {
 
       var current = config.layers[layerId];
+      if(current) {
+        //Check if layer is equal to the current projection, then output
+        if (Object.keys(current.projections).indexOf(projection) > -1) {
+          if (!current) {
+            console.warn("In layer order but not defined", layerId);
+          } else {
+            var $layerItem = $( '<li></li>' )
+                .attr('id', 'layer-flat-' + current.id )
+                .attr("data-layer", encodeURIComponent(current.id))
+                .addClass('layers-all-layer');
 
-      //Check if layer is equal to the current projection, then output
-      if (Object.keys(current.projections).indexOf(projection) > -1) {
-        if (!current) {
-          console.warn("In layer order but not defined", layerId);
-        } else {
-          var $layerItem = $( '<li></li>' )
-              .attr('id', 'layer-flat-' + current.id )
-              .attr("data-layer", encodeURIComponent(current.id))
-              .addClass('layers-all-layer');
 
+            var $layerHeader = $('<div></div>')
+              .addClass('layers-all-header')
+              .click(function(e) {
+                $(this).find('input#' + encodeURIComponent(current.id))
+                .iCheck('toggle');
+              });
 
-          var $layerHeader = $('<div></div>')
-            .addClass('layers-all-header')
-            .click(function(e) {
-              $(this).find('input#' + encodeURIComponent(current.id))
-              .iCheck('toggle');
+            var $layerTitleWrap = $( '<div></div>' )
+                .addClass('layers-all-title-wrap');
+
+            var $layerTitle = $( '<h3></h3>' )
+                .text( current.title );
+
+            var $layerSubtitle = $('<h5></h5>')
+                .append( current.subtitle );
+
+            var $checkbox = $("<input></input>")
+                .attr("id", encodeURIComponent(current.id))
+                .attr("value", current.id)
+                .attr("type", "checkbox")
+                .attr("data-layer", current.id)
+                .on('ifChecked', addLayer)
+                .on('ifUnchecked', removeLayer);
+
+            if ( _.find(model.active, {id: current.id}) ) {
+                $checkbox.attr("checked", "checked");
+            }
+
+            //Metadata
+            var $sourceMeta = $( '<div></div>' )
+                .addClass('source-metadata hidden');
+
+            var $showMore = $('<span></span>')
+                .addClass('fa fa-info-circle');
+
+            var $moreTab = $('<div></div>')
+                .addClass('metadata-more');
+
+            var $moreElps = $('<span></span>')
+                .addClass('ellipsis up')
+                .text('^');
+
+            $moreTab.append( $moreElps );
+
+            $showMore.add($moreTab).toggle( function(e){
+                $sourceMeta.toggleClass('hidden');
+                redoScrollbar();
+            }, function(e){
+                $sourceMeta.toggleClass('hidden');
+                redoScrollbar();
             });
 
-          var $layerTitleWrap = $( '<div></div>' )
-              .addClass('layers-all-title-wrap');
+            $layerItem.append( $layerHeader );
+            $layerHeader.append( $checkbox );
+            $layerHeader.append( $layerTitleWrap );
+            $layerTitleWrap.append( $layerTitle );
+            if( current.description ) {
+              $layerTitle.append( $showMore );
+            }
+            $layerTitleWrap.append( $layerSubtitle );
 
-          var $layerTitle = $( '<h3></h3>' )
-              .text( current.title );
+            if( current.description ) {
+                $.get('config/metadata/' + current.description + '.html')
+                    .success(function(data) {
+                        $sourceMeta.html(data);
+                        $layerItem.append( $sourceMeta );
+                        $sourceMeta.append( $moreTab );
+                        $sourceMeta.find('a')
+                            .attr('target','_blank');
+                    }
+                );
+            }
 
-          var $layerSubtitle = $('<h5></h5>')
-              .append( current.subtitle );
-
-          var $checkbox = $("<input></input>")
-              .attr("id", encodeURIComponent(current.id))
-              .attr("value", current.id)
-              .attr("type", "checkbox")
-              .attr("data-layer", current.id)
-              .on('ifChecked', addLayer)
-              .on('ifUnchecked', removeLayer);
-
-          if ( _.find(model.active, {id: current.id}) ) {
-              $checkbox.attr("checked", "checked");
+            $fullLayerList.append( $layerItem );
           }
-
-          //Metadata
-          var $sourceMeta = $( '<div></div>' )
-              .addClass('source-metadata hidden');
-
-          var $showMore = $('<span></span>')
-              .addClass('fa fa-info-circle');
-
-          var $moreTab = $('<div></div>')
-              .addClass('metadata-more');
-
-          var $moreElps = $('<span></span>')
-              .addClass('ellipsis up')
-              .text('^');
-
-          $moreTab.append( $moreElps );
-
-          $showMore.add($moreTab).toggle( function(e){
-              $sourceMeta.toggleClass('hidden');
-              redoScrollbar();
-          }, function(e){
-              $sourceMeta.toggleClass('hidden');
-              redoScrollbar();
-          });
-
-          $layerItem.append( $layerHeader );
-          $layerHeader.append( $checkbox );
-          $layerHeader.append( $layerTitleWrap );
-          $layerTitleWrap.append( $layerTitle );
-          if( current.description ) {
-            $layerTitle.append( $showMore );
-          }
-          $layerTitleWrap.append( $layerSubtitle );
-
-          if( current.description ) {
-              $.get('config/metadata/' + current.description + '.html')
-                  .success(function(data) {
-                      $sourceMeta.html(data);
-                      $layerItem.append( $sourceMeta );
-                      $sourceMeta.append( $moreTab );
-                      $sourceMeta.find('a')
-                          .attr('target','_blank');
-                  }
-              );
-          }
-
-          $fullLayerList.append( $layerItem );
         }
       }
     });
