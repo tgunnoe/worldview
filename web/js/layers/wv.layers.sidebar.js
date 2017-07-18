@@ -69,7 +69,7 @@ wv.layers.sidebar = wv.layers.sidebar || function(models, config) {
     };
 
     self.selectTab = function(tabName) {
-        
+
         if ( tabName === "active" ) {
             $(self.selector).tabs("option", "active", 0);
         } else if ( tabName === "events" ) {
@@ -157,6 +157,7 @@ wv.layers.sidebar = wv.layers.sidebar || function(models, config) {
             .attr("data-tab", "active");
 
         $(self.selector + " footer button").hide();
+        $("#layers-legacy-add").show();
         $("#layers-add").show();
 
         var $activeLink = $("<a></a>")
@@ -244,6 +245,7 @@ wv.layers.sidebar = wv.layers.sidebar || function(models, config) {
             $('.ui-tabs-nav li.third').removeClass("ui-state-active");
             $footerBtns.show();
             $footerBtns.find("button").hide();
+            $("#layers-legacy-add").show();
             $("#layers-add").show();
         } else if ( tab === "events" ) {
             WVC.GA.event('Natural Events', 'Click', 'Events Tab');

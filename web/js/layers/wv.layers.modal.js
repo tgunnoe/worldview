@@ -26,6 +26,7 @@ wv.layers.modal = wv.layers.modal || function(models, ui, config) {
   self.selector = '#layer-modal';
   self.id = 'layer-modal';
 
+  var $addLegacyBtn = $('#layers-legacy-add');
   var $addBtn = $('#layers-add');
   var $header = $(self.selector + ' header');
   var $categories = $(' #layer-categories ');
@@ -53,6 +54,10 @@ wv.layers.modal = wv.layers.modal || function(models, ui, config) {
 
     //Create tiles
     render();
+
+    $addLegacyBtn.click(function(e) {
+      $(self.selector).dialog("open");
+    });
 
     $addBtn.click(function(e) {
       $(self.selector).dialog("open");
@@ -174,15 +179,19 @@ wv.layers.modal = wv.layers.modal || function(models, ui, config) {
         _.each( category.measurements, function( measurement, index ) {
             var projection = models.proj.selected.id;
             var current = config.measurements[measurement];
-            _.each( current.sources, function( source, souceName ) {
-                _.each( source.settings, function( setting ) {
-                    var layer = config.layers[setting];
-                    var proj = layer.projections;
-                    if(layer.id == setting && Object.keys(proj).indexOf(projection) > -1) {
-                        categoryHasSetting = true;
-                    }
+            if(current) {
+                _.each( current.sources, function( source, souceName ) {
+                    _.each( source.settings, function( setting ) {
+                        var layer = config.layers[setting];
+                        if(layer) {
+                          var proj = layer.projections;
+                          if(layer.id == setting && Object.keys(proj).indexOf(projection) > -1) {
+                              categoryHasSetting = true;
+                          }
+                        }
+                    });
                 });
-            });
+            }
         });
 
         if (categoryHasSetting === true) {
@@ -219,15 +228,19 @@ wv.layers.modal = wv.layers.modal || function(models, ui, config) {
             var current = config.measurements[measurement];
             // Check if measurements have settings with the same projection.
             var measurementHasSetting;
-            _.each( current.sources, function( source, souceName ) {
-                _.each( source.settings, function( setting ) {
-                    var layer = config.layers[setting];
-                    var proj = layer.projections;
-                    if(layer.id == setting && Object.keys(proj).indexOf(projection) > -1) {
-                        measurementHasSetting = true;
-                    }
+            if(current) {
+                _.each( current.sources, function( source, souceName ) {
+                    _.each( source.settings, function( setting ) {
+                        var layer = config.layers[setting];
+                        if(layer) {
+                            var proj = layer.projections;
+                            if(layer.id == setting && Object.keys(proj).indexOf(projection) > -1) {
+                                measurementHasSetting = true;
+                            }
+                        }
+                    });
                 });
-            });
+            }
             if(measurementHasSetting === true) {
               $i++;
 
@@ -319,16 +332,19 @@ wv.layers.modal = wv.layers.modal || function(models, ui, config) {
 
         // Check if measurements have settings with the same projection.
         var measurementHasSetting;
-        _.each( current.sources, function( source, souceName ) {
-            _.each( source.settings, function( setting ) {
-                var layer = config.layers[setting];
-                var proj = layer.projections;
-                if(layer.id == setting && Object.keys(proj).indexOf(projection) > -1) {
-                    measurementHasSetting = true;
-                }
+        if(current) {
+            _.each( current.sources, function( source, souceName ) {
+                _.each( source.settings, function( setting ) {
+                    var layer = config.layers[setting];
+                    if(layer) {
+                        var proj = layer.projections;
+                        if(layer.id == setting && Object.keys(proj).indexOf(projection) > -1) {
+                            measurementHasSetting = true;
+                        }
+                    }
+                });
             });
-        });
-
+        }
       if (measurementHasSetting === true) {
         var $measurementHeader = $('<div></div>').attr('id', 'accordion-' + category.id + '-' + current.id);
 
@@ -349,128 +365,132 @@ wv.layers.modal = wv.layers.modal || function(models, ui, config) {
             var sourceHasSetting;
             _.each( source.settings, function( setting ) {
                 var layer = config.layers[setting];
-                var proj = layer.projections;
-                if(layer.id == setting && Object.keys(proj).indexOf(projection) > -1) {
-                    sourceHasSetting = true;
+                if(layer) {
+                    var proj = layer.projections;
+                    if(layer.id == setting && Object.keys(proj).indexOf(projection) > -1) {
+                        sourceHasSetting = true;
+                    }
                 }
             });
 
             if(sourceHasSetting === true) {
-            var $sourceTab = $('<li></li>');
+              var $sourceTab = $('<li></li>');
 
-            var $sourceLink = $('<a></a>').text(source.title).attr('href', '#' + current.id + '-' + source.id);
+              var $sourceLink = $('<a></a>').text(source.title).attr('href', '#' + current.id + '-' + source.id);
 
-            $sourceTab.append($sourceLink);
-            $sourceTabs.append($sourceTab);
+              $sourceTab.append($sourceLink);
+              $sourceTabs.append($sourceTab);
 
-            var $sourceContent = $('<div></div>').attr('id', current.id + '-' + source.id);
+              var $sourceContent = $('<div></div>').attr('id', current.id + '-' + source.id);
 
-            //Metadata
+              //Metadata
 
-            var $sourceMeta = $('<div></div>').addClass('source-metadata');
+              var $sourceMeta = $('<div></div>').addClass('source-metadata');
 
-            var $showMore = $('<div></div>').addClass('metadata-more');
+              var $showMore = $('<div></div>').addClass('metadata-more');
 
-            var $moreElps = $('<span></span>').addClass('ellipsis').text('...');
+              var $moreElps = $('<span></span>').addClass('ellipsis').text('...');
 
-            $showMore.append($moreElps);
+              $showMore.append($moreElps);
 
-            $showMore.toggle(function(e) {
-              $sourceMeta.removeClass('overflow');
-              $moreElps.text('^').addClass('up');
-              redoScrollbar();
-            }, function(e) {
-              $sourceMeta.addClass('overflow');
-              $moreElps.text('...').removeClass('up');
-              redoScrollbar();
-            });
-
-            //Simple test to see if theres a link to some metadata
-            if (source.description) {
-              $.get('config/metadata/' + source.description + '.html').success(function(data) {
-                $sourceMeta.html(data);
-                $sourceContent.append($sourceMeta);
-
-                $sourceMeta.find('a').attr('target', '_blank');
-                //More than a thousand chars add show more widget
-                if ($sourceMeta.text().length > 1000) {
-                  $sourceMeta.addClass('overflow').after($showMore);
-                }
+              $showMore.toggle(function(e) {
+                $sourceMeta.removeClass('overflow');
+                $moreElps.text('^').addClass('up');
+                redoScrollbar();
+              }, function(e) {
+                $sourceMeta.addClass('overflow');
+                $moreElps.text('...').removeClass('up');
+                redoScrollbar();
               });
-            }
 
-            var $sourceSettings = $('<ul></ul>').addClass('source-settings');
+              //Simple test to see if theres a link to some metadata
+              if (source.description) {
+                $.get('config/metadata/' + source.description + '.html').success(function(data) {
+                  $sourceMeta.html(data);
+                  $sourceContent.append($sourceMeta);
 
-            var $sourceOrbits = $('<ul></ul>').addClass('source-orbit-tracks').attr('id', source.id + '-orbit-tracks');
-
-            _.each(source.settings, function(setting) {
-              var layer = config.layers[setting];
-
-              // If a setting matches the current projection, then output it.
-              if (layer.id == setting && Object.keys(layer.projections).indexOf(projection) > -1) {
-
-                var $wrapper = $('<li></li>').attr('data-layer', encodeURIComponent(layer.id)).attr('value', encodeURIComponent(layer.id)).addClass('measurement-settings-item');
-
-                var $setting = $('<input></input>').attr('type', 'checkbox').addClass('settings-check').attr('id', 'setting-' + layer.id).attr('value', encodeURIComponent(layer.id))
-                //maybe dont need value and data-layer both
-                  .attr('data-layer', encodeURIComponent(layer.id)).on('ifChecked', addLayer).on('ifUnchecked', removeLayer);
-
-                if (_.find(model.active, {id: layer.id})) {
-                  $setting.attr("checked", "checked");
-                }
-
-                var $label = $('<label></label>').attr('for', 'setting-' + encodeURIComponent(layer.id)).text(layer.title);
-
-                $wrapper.append($setting).append($label);
-
-                //If this is an orbit track.... put it in the orbit track list
-                if (layer.title.indexOf("Orbital Track") !== -1) {
-                  var orbitTitle;
-                  // The following complex if statement is a placeholder
-                  // for truncating the layer names, until the rest of
-                  // the interface is implemented
-
-                  if (layer.title.indexOf('(') !== -1) {
-                    var regExp = /\(([^)]+)\)/;
-                    var matches = regExp.exec(layer.title);
-                    orbitTitle = matches[1];
+                  $sourceMeta.find('a').attr('target', '_blank');
+                  //More than a thousand chars add show more widget
+                  if ($sourceMeta.text().length > 1000) {
+                    $sourceMeta.addClass('overflow').after($showMore);
                   }
-                  $label.empty().text(orbitTitle);
-                  $sourceOrbits.append($wrapper);
-                } else {
-                  $sourceSettings.append($wrapper);
-                }
-                $wrapper.click(function(e) {
-                  e.stopPropagation();
-                  var $checkbox = $(this).find('input#setting-' + layer.id);
-
-                  $checkbox.iCheck('toggle');
                 });
               }
-            });
-            //End setting level
-            $sourceContent.append($sourceSettings);
 
-            if ($sourceOrbits.children().length > 0) {
-              var $orbitsTitle = $('<h3></h3>').addClass('source-orbits-title').text('Orbital Tracks:');
+              var $sourceSettings = $('<ul></ul>').addClass('source-settings');
 
-              $sourceContent.append($orbitsTitle);
-              $sourceContent.append($sourceOrbits);
+              var $sourceOrbits = $('<ul></ul>').addClass('source-orbit-tracks').attr('id', source.id + '-orbit-tracks');
+
+              _.each(source.settings, function(setting) {
+                var layer = config.layers[setting];
+
+                // If a setting matches the current projection, then output it.
+                if(layer) {
+                  if (layer.id == setting && Object.keys(layer.projections).indexOf(projection) > -1) {
+
+                    var $wrapper = $('<li></li>').attr('data-layer', encodeURIComponent(layer.id)).attr('value', encodeURIComponent(layer.id)).addClass('measurement-settings-item');
+
+                    var $setting = $('<input></input>').attr('type', 'checkbox').addClass('settings-check').attr('id', 'setting-' + layer.id).attr('value', encodeURIComponent(layer.id))
+                    //maybe dont need value and data-layer both
+                      .attr('data-layer', encodeURIComponent(layer.id)).on('ifChecked', addLayer).on('ifUnchecked', removeLayer);
+
+                    if (_.find(model.active, {id: layer.id})) {
+                      $setting.attr("checked", "checked");
+                    }
+
+                    var $label = $('<label></label>').attr('for', 'setting-' + encodeURIComponent(layer.id)).text(layer.title);
+
+                    $wrapper.append($setting).append($label);
+
+                    //If this is an orbit track.... put it in the orbit track list
+                    if (layer.title.indexOf("Orbital Track") !== -1) {
+                      var orbitTitle;
+                      // The following complex if statement is a placeholder
+                      // for truncating the layer names, until the rest of
+                      // the interface is implemented
+
+                      if (layer.title.indexOf('(') !== -1) {
+                        var regExp = /\(([^)]+)\)/;
+                        var matches = regExp.exec(layer.title);
+                        orbitTitle = matches[1];
+                      }
+                      $label.empty().text(orbitTitle);
+                      $sourceOrbits.append($wrapper);
+                    } else {
+                      $sourceSettings.append($wrapper);
+                    }
+                    $wrapper.click(function(e) {
+                      e.stopPropagation();
+                      var $checkbox = $(this).find('input#setting-' + layer.id);
+
+                      $checkbox.iCheck('toggle');
+                    });
+                  }
+                }
+              });
+              //End setting level
+              $sourceContent.append($sourceSettings);
+
+              if ($sourceOrbits.children().length > 0) {
+                var $orbitsTitle = $('<h3></h3>').addClass('source-orbits-title').text('Orbital Tracks:');
+
+                $sourceContent.append($orbitsTitle);
+                $sourceContent.append($sourceOrbits);
+              }
+
+              //$sourceContent.append( $addButton, $removeButton );
+              $measurementContent.append($sourceContent);
             }
+          });
+          //End source level
+          $measurementContent.tabs();
 
-            //$sourceContent.append( $addButton, $removeButton );
-            $measurementContent.append($sourceContent);
-          }
-        });
-        //End source level
-        $measurementContent.tabs();
+          $measurementHeader.append($measurementTitle);
+          $measurementHeader.append($measurementSubtitle);
 
-        $measurementHeader.append($measurementTitle);
-        $measurementHeader.append($measurementSubtitle);
-
-        $categoryList.append($measurementHeader);
-        $categoryList.append($measurementContent);
-      }
+          $categoryList.append($measurementHeader);
+          $categoryList.append($measurementContent);
+        }
     });
     //End measurement level
 
@@ -530,92 +550,93 @@ wv.layers.modal = wv.layers.modal || function(models, ui, config) {
     _.each(config.layerOrder, function(layerId) {
 
       var current = config.layers[layerId];
+      if(current) {
+        //Check if layer is equal to the current projection, then output
+        if (Object.keys(current.projections).indexOf(projection) > -1) {
+          if (!current) {
+            console.warn("In layer order but not defined", layerId);
+          } else {
+            var $layerItem = $( '<li></li>' )
+                .attr('id', 'layer-flat-' + current.id )
+                .attr("data-layer", encodeURIComponent(current.id))
+                .addClass('layers-all-layer');
 
-      //Check if layer is equal to the current projection, then output
-      if (Object.keys(current.projections).indexOf(projection) > -1) {
-        if (!current) {
-          console.warn("In layer order but not defined", layerId);
-        } else {
-          var $layerItem = $( '<li></li>' )
-              .attr('id', 'layer-flat-' + current.id )
-              .attr("data-layer", encodeURIComponent(current.id))
-              .addClass('layers-all-layer');
 
+            var $layerHeader = $('<div></div>')
+              .addClass('layers-all-header')
+              .click(function(e) {
+                $(this).find('input#' + encodeURIComponent(current.id))
+                .iCheck('toggle');
+              });
 
-          var $layerHeader = $('<div></div>')
-            .addClass('layers-all-header')
-            .click(function(e) {
-              $(this).find('input#' + encodeURIComponent(current.id))
-              .iCheck('toggle');
+            var $layerTitleWrap = $( '<div></div>' )
+                .addClass('layers-all-title-wrap');
+
+            var $layerTitle = $( '<h3></h3>' )
+                .text( current.title );
+
+            var $layerSubtitle = $('<h5></h5>')
+                .append( current.subtitle );
+
+            var $checkbox = $("<input></input>")
+                .attr("id", encodeURIComponent(current.id))
+                .attr("value", current.id)
+                .attr("type", "checkbox")
+                .attr("data-layer", current.id)
+                .on('ifChecked', addLayer)
+                .on('ifUnchecked', removeLayer);
+
+            if ( _.find(model.active, {id: current.id}) ) {
+                $checkbox.attr("checked", "checked");
+            }
+
+            //Metadata
+            var $sourceMeta = $( '<div></div>' )
+                .addClass('source-metadata hidden');
+
+            var $showMore = $('<span></span>')
+                .addClass('fa fa-info-circle');
+
+            var $moreTab = $('<div></div>')
+                .addClass('metadata-more');
+
+            var $moreElps = $('<span></span>')
+                .addClass('ellipsis up')
+                .text('^');
+
+            $moreTab.append( $moreElps );
+
+            $showMore.add($moreTab).toggle( function(e){
+                $sourceMeta.toggleClass('hidden');
+                redoScrollbar();
+            }, function(e){
+                $sourceMeta.toggleClass('hidden');
+                redoScrollbar();
             });
 
-          var $layerTitleWrap = $( '<div></div>' )
-              .addClass('layers-all-title-wrap');
+            $layerItem.append( $layerHeader );
+            $layerHeader.append( $checkbox );
+            $layerHeader.append( $layerTitleWrap );
+            $layerTitleWrap.append( $layerTitle );
+            if( current.description ) {
+              $layerTitle.append( $showMore );
+            }
+            $layerTitleWrap.append( $layerSubtitle );
 
-          var $layerTitle = $( '<h3></h3>' )
-              .text( current.title );
+            if( current.description ) {
+                $.get('config/metadata/' + current.description + '.html')
+                    .success(function(data) {
+                        $sourceMeta.html(data);
+                        $layerItem.append( $sourceMeta );
+                        $sourceMeta.append( $moreTab );
+                        $sourceMeta.find('a')
+                            .attr('target','_blank');
+                    }
+                );
+            }
 
-          var $layerSubtitle = $('<h5></h5>')
-              .append( current.subtitle );
-
-          var $checkbox = $("<input></input>")
-              .attr("id", encodeURIComponent(current.id))
-              .attr("value", current.id)
-              .attr("type", "checkbox")
-              .attr("data-layer", current.id)
-              .on('ifChecked', addLayer)
-              .on('ifUnchecked', removeLayer);
-
-          if ( _.find(model.active, {id: current.id}) ) {
-              $checkbox.attr("checked", "checked");
+            $fullLayerList.append( $layerItem );
           }
-
-          //Metadata
-          var $sourceMeta = $( '<div></div>' )
-              .addClass('source-metadata hidden');
-
-          var $showMore = $('<span></span>')
-              .addClass('fa fa-info-circle');
-
-          var $moreTab = $('<div></div>')
-              .addClass('metadata-more');
-
-          var $moreElps = $('<span></span>')
-              .addClass('ellipsis up')
-              .text('^');
-
-          $moreTab.append( $moreElps );
-
-          $showMore.add($moreTab).toggle( function(e){
-              $sourceMeta.toggleClass('hidden');
-              redoScrollbar();
-          }, function(e){
-              $sourceMeta.toggleClass('hidden');
-              redoScrollbar();
-          });
-
-          $layerItem.append( $layerHeader );
-          $layerHeader.append( $checkbox );
-          $layerHeader.append( $layerTitleWrap );
-          $layerTitleWrap.append( $layerTitle );
-          if( current.description ) {
-            $layerTitle.append( $showMore );
-          }
-          $layerTitleWrap.append( $layerSubtitle );
-
-          if( current.description ) {
-              $.get('config/metadata/' + current.description + '.html')
-                  .success(function(data) {
-                      $sourceMeta.html(data);
-                      $layerItem.append( $sourceMeta );
-                      $sourceMeta.append( $moreTab );
-                      $sourceMeta.find('a')
-                          .attr('target','_blank');
-                  }
-              );
-          }
-
-          $fullLayerList.append( $layerItem );
         }
       }
     });
