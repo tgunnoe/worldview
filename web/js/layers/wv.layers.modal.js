@@ -26,7 +26,6 @@ wv.layers.modal = wv.layers.modal || function(models, ui, config) {
   self.selector = '#layer-modal';
   self.id = 'layer-modal';
 
-  var $addLegacyBtn = $('#layers-legacy-add');
   var $addBtn = $('#layers-add');
   var $header = $(self.selector + ' header');
   var $categories = $(' #layer-categories ');
@@ -42,6 +41,7 @@ wv.layers.modal = wv.layers.modal || function(models, ui, config) {
   var visible = {};
 
   var init = function() {
+    console.log(config);
     _.each(config.layers, function(layer) {
       visible[layer.id] = true;
     });
@@ -54,10 +54,6 @@ wv.layers.modal = wv.layers.modal || function(models, ui, config) {
 
     //Create tiles
     render();
-
-    $addLegacyBtn.click(function(e) {
-      $(self.selector).dialog("open");
-    });
 
     $addBtn.click(function(e) {
       $(self.selector).dialog("open");
@@ -160,166 +156,169 @@ wv.layers.modal = wv.layers.modal || function(models, ui, config) {
       drawAllMeasurements();
     }
   };
-
   var drawCategories = function() {
-    $categories.empty();
-    if ($categories.data('isotope')) {
-      $categories.isotope('destroy');
-    }
-    $allLayers.hide();
-    $nav.empty();
-
-    _.each(config.categories, function(metaCategory, metaCategoryName) {
-
-      _.each(config.categories[metaCategoryName], function(category, name) {
-        var sortNumber;
-
-        // Check if categories have settings with the same projection.
-        var categoryHasSetting;
-        _.each( category.measurements, function( measurement, index ) {
-            var projection = models.proj.selected.id;
-            var current = config.measurements[measurement];
-            if(current) {
-                _.each( current.sources, function( source, souceName ) {
-                    _.each( source.settings, function( setting ) {
-                        var layer = config.layers[setting];
-                        if(layer) {
-                          var proj = layer.projections;
-                          if(layer.id == setting && Object.keys(proj).indexOf(projection) > -1) {
-                              categoryHasSetting = true;
-                          }
-                        }
-                    });
-                });
-            }
-        });
-
-        if (categoryHasSetting === true) {
-          if (category.placement) {
-            if (category.placement === 'first') {
-              sortNumber = 1;
-            } else if (category.placement === 'last') {
-              sortNumber = 3;
-            }
-          } else
-            sortNumber = 2;
-          var $category = $('<div></div>').attr('data-sort', sortNumber).addClass('layer-category layer-category-' + interestCssName(metaCategoryName)).attr('id', category.id);
-          if (category.image) {
-            $category.css('background-image', 'url("images/wv.layers/categories/' + category.image + '")');
-          }
-
-          var $categoryOpaque = $('<div></div>').addClass('category-background-cover');
-
-          $category.append($categoryOpaque);
-
-          var $categoryTitle = $('<h3></h3>');
-
-          var $categoryLink = $('<a></a>').text(category.title).attr('alt', category.title).addClass('layer-category-name').click(function(e) {
-            drawMeasurements(category);
-          });
-
-          $categoryTitle.append($categoryLink);
-          $categoryOpaque.append($categoryTitle);
-
-          var $measurements = $('<ul></ul>');
-          $i = 0;
-          _.each(category.measurements, function(measurement, index) {
-            var projection = models.proj.selected.id;
-            var current = config.measurements[measurement];
-            // Check if measurements have settings with the same projection.
-            var measurementHasSetting;
-            if(current) {
-                _.each( current.sources, function( source, souceName ) {
-                    _.each( source.settings, function( setting ) {
-                        var layer = config.layers[setting];
-                        if(layer) {
-                            var proj = layer.projections;
-                            if(layer.id == setting && Object.keys(proj).indexOf(projection) > -1) {
-                                measurementHasSetting = true;
-                            }
-                        }
-                    });
-                });
-            }
-            if(measurementHasSetting === true) {
-              $i++;
-
-              if ($i > 6) {
-                setCategoryOverflow(category, $measurements);
-              }
-
-              if (config.measurements[measurement] === undefined) {
-                throw new Error("Error: Measurement '" + measurement + "' stated in category '" + category.title + "' does not exist " + "in measurement list!");
-              }
-
-              var $measurement = $('<a></a>').attr('data-category', category.id).attr('data-measurement', current.id).attr('title', category.title + ' - ' + current.title).text(current.title);
-
-              $measurement.click(function(e) {
-                drawMeasurements(category, current.id, index);
-              });
-
-              var $measurementItem = $('<li></li>').addClass('layer-category-item');
-
-              $measurementItem.append($measurement);
-
-              $measurements.append($measurementItem);
-            }
-          });
-
-          $categoryOpaque.append($measurements);
-
-          $categories.append($category);
-
-          $breadcrumb.show();
-
-        }
-
-      });
-
-      $categories.show();
-
-      var $filterButton = $('<input />').attr('type', 'radio').text(interestLabelName(metaCategoryName));
-
-      var $label = $('<label></label>').text(interestLabelName(metaCategoryName));
-
-      $filterButton.attr('id', 'button-filter-' + interestCssName(metaCategoryName)).attr('data-filter', interestCssName(metaCategoryName)).click(function(e) {
-        $categories.isotope({
-          filter: '.layer-category-' + interestCssName(metaCategoryName)
-        });
-        $nav.find('.ui-button').removeClass('nav-selected');
-        $("label[for=" + $(this).attr("id") + "]").addClass('nav-selected');
-      });
-
-      $label.attr('for', 'button-filter-' + interestCssName(metaCategoryName));
-
-      $nav.append($filterButton);
-      $nav.append($label);
-      //Create radiobuttons with filter buttons
-      $nav.buttonset();
-      $nav.show();
-    });
-
-    $categories.isotope({
-      itemSelector: '.layer-category',
-      //stamp: '.stamp',
-      getSortData: {
-        name: '.layer-category-name', // text from querySelector
-        order: '[data-sort]'
-      },
-      sortBy: [
-        'order', 'name'
-      ],
-      filter: '.layer-category-legacy',
-      masonry: {
-        gutter: 10
-      }
-
-    });
-
-    $('#layer-modal-main').prepend($nav);
-
-    $('label[for=button-filter-legacy]').addClass('nav-selected');
+    // NEW CATEGORY DRAW HERE
   };
+
+  // var drawCategories = function() {
+  //   $categories.empty();
+  //   if ($categories.data('isotope')) {
+  //     $categories.isotope('destroy');
+  //   }
+  //   $allLayers.hide();
+  //   $nav.empty();
+  //
+  //   // metaCategoryName = Scientic / Hazards and Disasters
+  //   _.each(config.categories, function(metaCategory, metaCategoryName) {
+  //     _.each(config.categories[metaCategoryName], function(category, name) {
+  //       var sortNumber;
+  //
+  //       // Check if categories have settings with the same projection.
+  //       var categoryHasSetting;
+  //       _.each( category.measurements, function( measurement, index ) {
+  //           var projection = models.proj.selected.id;
+  //           var current = config.measurements[measurement];
+  //           if(current) {
+  //               _.each( current.sources, function( source, souceName ) {
+  //                   _.each( source.settings, function( setting ) {
+  //                       var layer = config.layers[setting];
+  //                       if(layer) {
+  //                         var proj = layer.projections;
+  //                         if(layer.id == setting && Object.keys(proj).indexOf(projection) > -1) {
+  //                             categoryHasSetting = true;
+  //                         }
+  //                       }
+  //                   });
+  //               });
+  //           }
+  //       });
+  //
+  //       if (categoryHasSetting === true) {
+  //         if (category.placement) {
+  //           if (category.placement === 'first') {
+  //             sortNumber = 1;
+  //           } else if (category.placement === 'last') {
+  //             sortNumber = 3;
+  //           }
+  //         } else
+  //           sortNumber = 2;
+  //         var $category = $('<div></div>').attr('data-sort', sortNumber).addClass('layer-category layer-category-' + interestCssName(metaCategoryName)).attr('id', category.id);
+  //         if (category.image) {
+  //           $category.css('background-image', 'url("images/wv.layers/categories/' + category.image + '")');
+  //         }
+  //
+  //         var $categoryOpaque = $('<div></div>').addClass('category-background-cover');
+  //
+  //         $category.append($categoryOpaque);
+  //
+  //         var $categoryTitle = $('<h3></h3>');
+  //
+  //         var $categoryLink = $('<a></a>').text(category.title).attr('alt', category.title).addClass('layer-category-name').click(function(e) {
+  //           drawMeasurements(category);
+  //         });
+  //
+  //         $categoryTitle.append($categoryLink);
+  //         $categoryOpaque.append($categoryTitle);
+  //
+  //         var $measurements = $('<ul></ul>');
+  //         $i = 0;
+  //         _.each(category.measurements, function(measurement, index) {
+  //           var projection = models.proj.selected.id;
+  //           var current = config.measurements[measurement];
+  //           // Check if measurements have settings with the same projection.
+  //           var measurementHasSetting;
+  //           if(current) {
+  //               _.each( current.sources, function( source, souceName ) {
+  //                   _.each( source.settings, function( setting ) {
+  //                       var layer = config.layers[setting];
+  //                       if(layer) {
+  //                           var proj = layer.projections;
+  //                           if(layer.id == setting && Object.keys(proj).indexOf(projection) > -1) {
+  //                               measurementHasSetting = true;
+  //                           }
+  //                       }
+  //                   });
+  //               });
+  //           }
+  //           if(measurementHasSetting === true) {
+  //             $i++;
+  //
+  //             if ($i > 6) {
+  //               setCategoryOverflow(category, $measurements);
+  //             }
+  //
+  //             if (config.measurements[measurement] === undefined) {
+  //               throw new Error("Error: Measurement '" + measurement + "' stated in category '" + category.title + "' does not exist " + "in measurement list!");
+  //             }
+  //
+  //             var $measurement = $('<a></a>').attr('data-category', category.id).attr('data-measurement', current.id).attr('title', category.title + ' - ' + current.title).text(current.title);
+  //
+  //             $measurement.click(function(e) {
+  //               drawMeasurements(category, current.id, index);
+  //             });
+  //
+  //             var $measurementItem = $('<li></li>').addClass('layer-category-item');
+  //
+  //             $measurementItem.append($measurement);
+  //
+  //             $measurements.append($measurementItem);
+  //           }
+  //         });
+  //
+  //         $categoryOpaque.append($measurements);
+  //
+  //         $categories.append($category);
+  //
+  //         $breadcrumb.show();
+  //
+  //       }
+  //
+  //     });
+  //
+  //     $categories.show();
+  //
+  //     var $filterButton = $('<input />').attr('type', 'radio').text(interestLabelName(metaCategoryName));
+  //
+  //     var $label = $('<label></label>').text(interestLabelName(metaCategoryName));
+  //
+  //     $filterButton.attr('id', 'button-filter-' + interestCssName(metaCategoryName)).attr('data-filter', interestCssName(metaCategoryName)).click(function(e) {
+  //       $categories.isotope({
+  //         filter: '.layer-category-' + interestCssName(metaCategoryName)
+  //       });
+  //       $nav.find('.ui-button').removeClass('nav-selected');
+  //       $("label[for=" + $(this).attr("id") + "]").addClass('nav-selected');
+  //     });
+  //
+  //     $label.attr('for', 'button-filter-' + interestCssName(metaCategoryName));
+  //
+  //     $nav.append($filterButton);
+  //     $nav.append($label);
+  //     //Create radiobuttons with filter buttons
+  //     $nav.buttonset();
+  //     $nav.show();
+  //   });
+  //
+  //   $categories.isotope({
+  //     itemSelector: '.layer-category',
+  //     //stamp: '.stamp',
+  //     getSortData: {
+  //       name: '.layer-category-name', // text from querySelector
+  //       order: '[data-sort]'
+  //     },
+  //     sortBy: [
+  //       'order', 'name'
+  //     ],
+  //     filter: '.layer-category-legacy',
+  //     masonry: {
+  //       gutter: 10
+  //     }
+  //
+  //   });
+  //
+  //   $('#layer-modal-main').prepend($nav);
+  //
+  //   $('label[for=button-filter-legacy]').addClass('nav-selected');
+  // };
 
   var drawMeasurements = function(category, selectedMeasurement, selectedIndex) {
     $selectedCategory.empty();

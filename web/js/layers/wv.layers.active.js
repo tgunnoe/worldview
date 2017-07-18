@@ -63,11 +63,9 @@ wv.layers.active = wv.layers.active || function(models, ui, config) {
     var render = function() {
         legends = {};
         var $container = $(self.selector);
-        var $addLegacyBtn = $("#layers-legacy-add");
         var $addBtn = $("#layers-add");
         $container.empty();
 
-        $addLegacyBtn.button();
         $addBtn.button();
 
 
