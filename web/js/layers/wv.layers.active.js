@@ -552,7 +552,7 @@ wv.layers.active = wv.layers.active || function(models, ui, config) {
         var map = ui.map;
         var zoom = map.selected.getView().getZoom();
 
-        var sources = config.sources;
+        var sources = config.capabilities;
         var proj = models.proj.selected.id;
 
         // Account for offset between the map's top zoom level and the

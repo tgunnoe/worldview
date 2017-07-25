@@ -139,7 +139,7 @@ wv.map.layerbuilder = wv.map.layerbuilder || function(models, config, cache, Par
         var proj, source, matrixSet, matrixIds, extra,
             date, extent, start;
         proj = models.proj.selected;
-        source = config.sources[def.source];
+        source = config.capabilities[def.source];
         extent = proj.maxExtent;
         start = [proj.maxExtent[0], proj.maxExtent[3]];
         if ( !source ) {
@@ -221,7 +221,7 @@ wv.map.layerbuilder = wv.map.layerbuilder || function(models, config, cache, Par
         var proj, source, matrixSet, matrixIds, extra, transparent,
             date, extent, start, bbox, res;
         proj = models.proj.selected;
-        source = config.sources[def.source];
+        source = config.capabilities[def.source];
         extent = proj.maxExtent;
         start = [proj.maxExtent[0], proj.maxExtent[3]];
         res = proj.resolutions;

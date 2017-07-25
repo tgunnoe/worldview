@@ -118,15 +118,15 @@ for layer_id in wv["layers"].keys():
         if "matrixSet" in projection:
             source = projection["source"]
             matrix_set = projection["matrixSet"]
-            if source not in wv["sources"]:
+            if source not in wv["capabilities"]:
                 error("[%s:%s] Invalid source: %s" %
                         (layer_id, proj_id, source))
                 del layer["projections"][proj_id]
-            elif "matrixSets" not in wv["sources"][source]:
+            elif "matrixSets" not in wv["capabilities"][source]:
                 error("[%s:%s] No matrix sets for projection" %
                         (layer_id, proj_id))
                 del layer["projections"][proj_id]
-            elif matrix_set not in wv["sources"][source]["matrixSets"]:
+            elif matrix_set not in wv["capabilities"][source]["matrixSets"]:
                 error("[%s:%s] Invalid matrix set: %s" %
                         (layer_id, proj_id, matrix_set))
                 del layer["projections"][proj_id]

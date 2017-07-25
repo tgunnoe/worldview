@@ -161,10 +161,10 @@ def process_entry(entry, colormaps):
     error_count = 0
     wv = {
         "layers": {},
-        "sources": {}
+        "capabilities": {}
     }
     wv_matrix_sets = {}
-    wv["sources"][entry["source"]] = {
+    wv["capabilities"][entry["source"]] = {
         "matrixSets": wv_matrix_sets
     }
 

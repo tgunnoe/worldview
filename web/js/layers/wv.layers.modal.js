@@ -37,11 +37,15 @@ wv.layers.modal = wv.layers.modal || function(models, ui, config) {
   var sizeMultiplier;
   var searchBool;
 
+  var measurementId = [];
+  var uniqueMeasurements;
+  var categoryId = [];
+  var uniqueCategories;
+
   //Visible Layers
   var visible = {};
 
   var init = function() {
-    console.log(config);
     _.each(config.layers, function(layer) {
       visible[layer.id] = true;
     });
@@ -51,6 +55,8 @@ wv.layers.modal = wv.layers.modal || function(models, ui, config) {
     //.on("add", onLayerAdded)
       .on("remove", onLayerRemoved);
     models.proj.events.on("select", drawDefaultPage);
+
+    layerUniques();
 
     //Create tiles
     render();
@@ -133,6 +139,7 @@ wv.layers.modal = wv.layers.modal || function(models, ui, config) {
   };
 
   var drawModal = function() {
+    // console.log(config);
     var crumbtext;
     projection = models.proj.selected.id;
 
@@ -156,8 +163,169 @@ wv.layers.modal = wv.layers.modal || function(models, ui, config) {
       drawAllMeasurements();
     }
   };
+
+  /**
+   * var layerUniques - Find the measurements and categories for each layer.
+   *
+   * @return {type}  description
+   */
+  var layerUniques = function() {
+    function onlyUnique(value, index, self) {
+        return self.indexOf(value) === index;
+    }
+    // Loop through sources and get the unqiue measurements and categories
+    _.each(config.layers, function(layer, layerName) {
+      _.each(layer.measurements, function(layerMeasurement, layerMeasurementName) {
+        _.each( config.measurements, function( val, key ) {
+          if ( layerMeasurement ) {
+            // Create array of measurements referenced in the config layers.
+            measurementId.push(key);
+            // Only output those measurements once in new array
+            uniqueMeasurements = measurementId.filter( onlyUnique );
+            // Find each category of the config layers
+            _.each(config.measurements[key].categories, function(val, key) {
+              // Create array of measurements referenced in the config layers.
+              categoryId.push(val);
+              // Only output those measurements once in new array
+              uniqueCategories = categoryId.filter( onlyUnique );
+            });
+          }
+        });
+      });
+    });
+  };
+
   var drawCategories = function() {
-    // NEW CATEGORY DRAW HERE
+
+    $categories.empty();
+    if ($categories.data('isotope')) {
+      $categories.isotope('destroy');
+    }
+    $allLayers.hide();
+    $nav.empty();
+
+    _.each(uniqueCategories, function(val, key) {
+      var category = config.categories[val];
+      if(category) {
+        if (category.placement) {
+          if (category.placement === 'first') {
+            sortNumber = 1;
+          } else if (category.placement === 'last') {
+            sortNumber = 3;
+          }
+        } else {
+          sortNumber = 2;
+        }
+        var $category = $('<div></div>').attr('data-sort', sortNumber)
+        .addClass('layer-category layer-category-' + category.type)
+        .attr('id', category.id);
+        if (category.image) {
+          $category.css('background-image', 'url("images/wv.layers/categories/' + category.image + '")');
+        }
+
+        var $categoryOpaque = $('<div></div>').addClass('category-background-cover');
+
+        $category.append($categoryOpaque);
+
+        var $categoryTitle = $('<h3></h3>');
+
+        var $categoryLink = $('<a></a>').text(category.title).attr('alt', category.title).addClass('layer-category-name').click(function(e) {
+          drawMeasurements(category);
+        });
+
+        $categoryTitle.append($categoryLink);
+        $categoryOpaque.append($categoryTitle);
+
+        var $measurements = $('<ul></ul>');
+        $i = 0;
+
+        _.each(config.measurements, function(measurement, index) {
+            _.each(measurement.categories, function(val, key) {
+              if(val == category.id) {
+                var projection = models.proj.selected.id;
+                $i++;
+
+                if ($i > 6) {
+                  setCategoryOverflow(category, $measurements);
+                }
+
+                // Might need to check this
+                if (measurement === undefined) {
+                  throw new Error("Error: Measurement '" + measurement + "' stated in category '" + category.title + "' does not exist " + "in measurement list!");
+                }
+
+                var $measurement = $('<a></a>')
+                  .attr('data-category', category.id)
+                  .attr('data-measurement', measurement.id)
+                  .attr('title', category.title + ' - ' + measurement.title)
+                  .text(measurement.title);
+
+                $measurement.click(function(e) {
+                  drawMeasurements(category, measurement.id, index);
+                });
+
+                var $measurementItem = $('<li></li>').addClass('layer-category-item');
+
+                $measurementItem.append($measurement);
+
+                $measurements.append($measurementItem);
+
+              }
+            });
+        });
+
+        $categoryOpaque.append($measurements);
+
+        $categories.append($category);
+
+        $breadcrumb.show();
+
+
+        $categories.show();
+
+        var $filterButton = $('<input />').attr('type', 'radio').text(category.type);
+
+        var $label = $('<label></label>').text(category.type);
+
+        $filterButton.attr('id', 'button-filter-' + category.type).attr('data-filter', category.type).click(function(e) {
+          $categories.isotope({
+            filter: '.layer-category-' + category.type
+          });
+          $nav.find('.ui-button').removeClass('nav-selected');
+          $("label[for=" + $(this).attr("id") + "]").addClass('nav-selected');
+        });
+
+        $label.attr('for', 'button-filter-' + category.type);
+
+        $nav.append($filterButton);
+        $nav.append($label);
+        //Create radiobuttons with filter buttons
+        $nav.buttonset();
+        $nav.show();
+      }
+    });
+
+    $categories.isotope({
+      itemSelector: '.layer-category',
+      //stamp: '.stamp',
+      getSortData: {
+        name: '.layer-category-name', // text from querySelector
+        order: '[data-sort]'
+      },
+      sortBy: [
+        'order', 'name'
+      ],
+      filter: '.layer-category-legacy',
+      masonry: {
+        gutter: 10
+      }
+
+    });
+
+    $('#layer-modal-main').prepend($nav);
+
+    $('label[for=button-filter-legacy]').addClass('nav-selected');
+
   };
 
   // var drawCategories = function() {
@@ -324,173 +492,191 @@ wv.layers.modal = wv.layers.modal || function(models, ui, config) {
     $selectedCategory.empty();
     $breadcrumb.empty();
     var $categoryList = $('<div></div>').attr('id', category.id + '-list');
+    var current = config.measurements[selectedMeasurement];
+    // console.log(selectedMeasurement);
+
+    var $measurementHeader = $('<div></div>').attr('id', 'accordion-' + category.id + '-' + current.id);
+    var $measurementTitle = $('<h3></h3>').text(current.title);
+    var $measurementSubtitle = $('<h5></h5>').text(current.subtitle);
+    var $sourceTabs = $('<ul></ul>');
+    var $measurementContent = $('<div></div>');
+    $measurementContent.append($sourceTabs);
+
+
+    $measurementContent.tabs();
+
+    $measurementHeader.append($measurementTitle);
+    $measurementHeader.append($measurementSubtitle);
+
+    $categoryList.append($measurementHeader);
+    $categoryList.append($measurementContent);
 
     //Begin Measurement Level
-    _.each( category.measurements, function( measurement, measurementName ) {
-        var current = config.measurements[measurement];
-
-        // Check if measurements have settings with the same projection.
-        var measurementHasSetting;
-        if(current) {
-            _.each( current.sources, function( source, souceName ) {
-                _.each( source.settings, function( setting ) {
-                    var layer = config.layers[setting];
-                    if(layer) {
-                        var proj = layer.projections;
-                        if(layer.id == setting && Object.keys(proj).indexOf(projection) > -1) {
-                            measurementHasSetting = true;
-                        }
-                    }
-                });
-            });
-        }
-      if (measurementHasSetting === true) {
-        var $measurementHeader = $('<div></div>').attr('id', 'accordion-' + category.id + '-' + current.id);
-
-        var $measurementTitle = $('<h3></h3>').text(current.title);
-
-        var $measurementSubtitle = $('<h5></h5>').text(current.subtitle);
-
-        var $sourceTabs = $('<ul></ul>');
-
-        var $measurementContent = $('<div></div>');
-
-        $measurementContent.append($sourceTabs);
-
-        //Begin source level
-        _.each( current.sources, function( source, souceName ) {
-
-            // Check if sources have settings with the same projection.
-            var sourceHasSetting;
-            _.each( source.settings, function( setting ) {
-                var layer = config.layers[setting];
-                if(layer) {
-                    var proj = layer.projections;
-                    if(layer.id == setting && Object.keys(proj).indexOf(projection) > -1) {
-                        sourceHasSetting = true;
-                    }
-                }
-            });
-
-            if(sourceHasSetting === true) {
-              var $sourceTab = $('<li></li>');
-
-              var $sourceLink = $('<a></a>').text(source.title).attr('href', '#' + current.id + '-' + source.id);
-
-              $sourceTab.append($sourceLink);
-              $sourceTabs.append($sourceTab);
-
-              var $sourceContent = $('<div></div>').attr('id', current.id + '-' + source.id);
-
-              //Metadata
-
-              var $sourceMeta = $('<div></div>').addClass('source-metadata');
-
-              var $showMore = $('<div></div>').addClass('metadata-more');
-
-              var $moreElps = $('<span></span>').addClass('ellipsis').text('...');
-
-              $showMore.append($moreElps);
-
-              $showMore.toggle(function(e) {
-                $sourceMeta.removeClass('overflow');
-                $moreElps.text('^').addClass('up');
-                redoScrollbar();
-              }, function(e) {
-                $sourceMeta.addClass('overflow');
-                $moreElps.text('...').removeClass('up');
-                redoScrollbar();
-              });
-
-              //Simple test to see if theres a link to some metadata
-              if (source.description) {
-                $.get('config/metadata/' + source.description + '.html').success(function(data) {
-                  $sourceMeta.html(data);
-                  $sourceContent.append($sourceMeta);
-
-                  $sourceMeta.find('a').attr('target', '_blank');
-                  //More than a thousand chars add show more widget
-                  if ($sourceMeta.text().length > 1000) {
-                    $sourceMeta.addClass('overflow').after($showMore);
-                  }
-                });
-              }
-
-              var $sourceSettings = $('<ul></ul>').addClass('source-settings');
-
-              var $sourceOrbits = $('<ul></ul>').addClass('source-orbit-tracks').attr('id', source.id + '-orbit-tracks');
-
-              _.each(source.settings, function(setting) {
-                var layer = config.layers[setting];
-
-                // If a setting matches the current projection, then output it.
-                if(layer) {
-                  if (layer.id == setting && Object.keys(layer.projections).indexOf(projection) > -1) {
-
-                    var $wrapper = $('<li></li>').attr('data-layer', encodeURIComponent(layer.id)).attr('value', encodeURIComponent(layer.id)).addClass('measurement-settings-item');
-
-                    var $setting = $('<input></input>').attr('type', 'checkbox').addClass('settings-check').attr('id', 'setting-' + layer.id).attr('value', encodeURIComponent(layer.id))
-                    //maybe dont need value and data-layer both
-                      .attr('data-layer', encodeURIComponent(layer.id)).on('ifChecked', addLayer).on('ifUnchecked', removeLayer);
-
-                    if (_.find(model.active, {id: layer.id})) {
-                      $setting.attr("checked", "checked");
-                    }
-
-                    var $label = $('<label></label>').attr('for', 'setting-' + encodeURIComponent(layer.id)).text(layer.title);
-
-                    $wrapper.append($setting).append($label);
-
-                    //If this is an orbit track.... put it in the orbit track list
-                    if (layer.title.indexOf("Orbital Track") !== -1) {
-                      var orbitTitle;
-                      // The following complex if statement is a placeholder
-                      // for truncating the layer names, until the rest of
-                      // the interface is implemented
-
-                      if (layer.title.indexOf('(') !== -1) {
-                        var regExp = /\(([^)]+)\)/;
-                        var matches = regExp.exec(layer.title);
-                        orbitTitle = matches[1];
-                      }
-                      $label.empty().text(orbitTitle);
-                      $sourceOrbits.append($wrapper);
-                    } else {
-                      $sourceSettings.append($wrapper);
-                    }
-                    $wrapper.click(function(e) {
-                      e.stopPropagation();
-                      var $checkbox = $(this).find('input#setting-' + layer.id);
-
-                      $checkbox.iCheck('toggle');
-                    });
-                  }
-                }
-              });
-              //End setting level
-              $sourceContent.append($sourceSettings);
-
-              if ($sourceOrbits.children().length > 0) {
-                var $orbitsTitle = $('<h3></h3>').addClass('source-orbits-title').text('Orbital Tracks:');
-
-                $sourceContent.append($orbitsTitle);
-                $sourceContent.append($sourceOrbits);
-              }
-
-              //$sourceContent.append( $addButton, $removeButton );
-              $measurementContent.append($sourceContent);
-            }
-          });
-          //End source level
-          $measurementContent.tabs();
-
-          $measurementHeader.append($measurementTitle);
-          $measurementHeader.append($measurementSubtitle);
-
-          $categoryList.append($measurementHeader);
-          $categoryList.append($measurementContent);
-        }
-    });
+    // _.each( category.measurements, function( measurement, measurementName ) {
+    //     var current = config.measurements[measurement];
+    //
+    //     // Check if measurements have settings with the same projection.
+    //     var measurementHasSetting;
+    //     if(current) {
+    //         _.each( current.sources, function( source, souceName ) {
+    //             _.each( source.settings, function( setting ) {
+    //                 var layer = config.layers[setting];
+    //                 if(layer) {
+    //                     var proj = layer.projections;
+    //                     if(layer.id == setting && Object.keys(proj).indexOf(projection) > -1) {
+    //                         measurementHasSetting = true;
+    //                     }
+    //                 }
+    //             });
+    //         });
+    //     }
+    //   if (measurementHasSetting === true) {
+    //     var $measurementHeader = $('<div></div>').attr('id', 'accordion-' + category.id + '-' + current.id);
+    //
+    //     var $measurementTitle = $('<h3></h3>').text(current.title);
+    //
+    //     var $measurementSubtitle = $('<h5></h5>').text(current.subtitle);
+    //
+    //     var $sourceTabs = $('<ul></ul>');
+    //
+    //     var $measurementContent = $('<div></div>');
+    //
+    //     $measurementContent.append($sourceTabs);
+    //
+    //     //Begin source level
+    //     _.each( current.sources, function( source, souceName ) {
+    //
+    //         // Check if sources have settings with the same projection.
+    //         var sourceHasSetting;
+    //         _.each( source.settings, function( setting ) {
+    //             var layer = config.layers[setting];
+    //             if(layer) {
+    //                 var proj = layer.projections;
+    //                 if(layer.id == setting && Object.keys(proj).indexOf(projection) > -1) {
+    //                     sourceHasSetting = true;
+    //                 }
+    //             }
+    //         });
+    //
+    //         if(sourceHasSetting === true) {
+    //           var $sourceTab = $('<li></li>');
+    //
+    //           var $sourceLink = $('<a></a>').text(source.title).attr('href', '#' + current.id + '-' + source.id);
+    //
+    //           $sourceTab.append($sourceLink);
+    //           $sourceTabs.append($sourceTab);
+    //
+    //           var $sourceContent = $('<div></div>').attr('id', current.id + '-' + source.id);
+    //
+    //           //Metadata
+    //
+    //           var $sourceMeta = $('<div></div>').addClass('source-metadata');
+    //
+    //           var $showMore = $('<div></div>').addClass('metadata-more');
+    //
+    //           var $moreElps = $('<span></span>').addClass('ellipsis').text('...');
+    //
+    //           $showMore.append($moreElps);
+    //
+    //           $showMore.toggle(function(e) {
+    //             $sourceMeta.removeClass('overflow');
+    //             $moreElps.text('^').addClass('up');
+    //             redoScrollbar();
+    //           }, function(e) {
+    //             $sourceMeta.addClass('overflow');
+    //             $moreElps.text('...').removeClass('up');
+    //             redoScrollbar();
+    //           });
+    //
+    //           //Simple test to see if theres a link to some metadata
+    //           if (source.description) {
+    //             $.get('config/metadata/' + source.description + '.html').success(function(data) {
+    //               $sourceMeta.html(data);
+    //               $sourceContent.append($sourceMeta);
+    //
+    //               $sourceMeta.find('a').attr('target', '_blank');
+    //               //More than a thousand chars add show more widget
+    //               if ($sourceMeta.text().length > 1000) {
+    //                 $sourceMeta.addClass('overflow').after($showMore);
+    //               }
+    //             });
+    //           }
+    //
+    //           var $sourceSettings = $('<ul></ul>').addClass('source-settings');
+    //
+    //           var $sourceOrbits = $('<ul></ul>').addClass('source-orbit-tracks').attr('id', source.id + '-orbit-tracks');
+    //
+    //           _.each(source.settings, function(setting) {
+    //             var layer = config.layers[setting];
+    //
+    //             // If a setting matches the current projection, then output it.
+    //             if(layer) {
+    //               if (layer.id == setting && Object.keys(layer.projections).indexOf(projection) > -1) {
+    //
+    //                 var $wrapper = $('<li></li>').attr('data-layer', encodeURIComponent(layer.id)).attr('value', encodeURIComponent(layer.id)).addClass('measurement-settings-item');
+    //
+    //                 var $setting = $('<input></input>').attr('type', 'checkbox').addClass('settings-check').attr('id', 'setting-' + layer.id).attr('value', encodeURIComponent(layer.id))
+    //                 //maybe dont need value and data-layer both
+    //                   .attr('data-layer', encodeURIComponent(layer.id)).on('ifChecked', addLayer).on('ifUnchecked', removeLayer);
+    //
+    //                 if (_.find(model.active, {id: layer.id})) {
+    //                   $setting.attr("checked", "checked");
+    //                 }
+    //
+    //                 var $label = $('<label></label>').attr('for', 'setting-' + encodeURIComponent(layer.id)).text(layer.title);
+    //
+    //                 $wrapper.append($setting).append($label);
+    //
+    //                 //If this is an orbit track.... put it in the orbit track list
+    //                 if (layer.title.indexOf("Orbital Track") !== -1) {
+    //                   var orbitTitle;
+    //                   // The following complex if statement is a placeholder
+    //                   // for truncating the layer names, until the rest of
+    //                   // the interface is implemented
+    //
+    //                   if (layer.title.indexOf('(') !== -1) {
+    //                     var regExp = /\(([^)]+)\)/;
+    //                     var matches = regExp.exec(layer.title);
+    //                     orbitTitle = matches[1];
+    //                   }
+    //                   $label.empty().text(orbitTitle);
+    //                   $sourceOrbits.append($wrapper);
+    //                 } else {
+    //                   $sourceSettings.append($wrapper);
+    //                 }
+    //                 $wrapper.click(function(e) {
+    //                   e.stopPropagation();
+    //                   var $checkbox = $(this).find('input#setting-' + layer.id);
+    //
+    //                   $checkbox.iCheck('toggle');
+    //                 });
+    //               }
+    //             }
+    //           });
+    //           //End setting level
+    //           $sourceContent.append($sourceSettings);
+    //
+    //           if ($sourceOrbits.children().length > 0) {
+    //             var $orbitsTitle = $('<h3></h3>').addClass('source-orbits-title').text('Orbital Tracks:');
+    //
+    //             $sourceContent.append($orbitsTitle);
+    //             $sourceContent.append($sourceOrbits);
+    //           }
+    //
+    //           //$sourceContent.append( $addButton, $removeButton );
+    //           $measurementContent.append($sourceContent);
+    //         }
+    //       });
+    //       //End source level
+    //       $measurementContent.tabs();
+    //
+    //       $measurementHeader.append($measurementTitle);
+    //       $measurementHeader.append($measurementSubtitle);
+    //
+    //       $categoryList.append($measurementHeader);
+    //       $categoryList.append($measurementContent);
+    //     }
+    // });
     //End measurement level
 
     $categoryList.accordion({
