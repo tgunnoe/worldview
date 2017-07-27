@@ -48,7 +48,7 @@ wv.layers.modal = wv.layers.modal || function(models, ui, config) {
   var visible = {};
 
   var init = function() {
-    console.log(config);
+    // console.log(config);
     _.each(config.layers, function(layer) {
       visible[layer.id] = true;
     });
@@ -212,9 +212,10 @@ wv.layers.modal = wv.layers.modal || function(models, ui, config) {
     $allLayers.hide();
     $nav.empty();
 
-    _.each(layerCategories, function(val, key) {
-      var category = config.categories[val];
+    _.each(layerCategories, function(layerCategory, layerCategoryKey) {
+      var category = config.categories[layerCategory];
       if(category) {
+        console.log(category);
         if (category.placement) {
           if (category.placement === 'first') {
             sortNumber = 1;
@@ -248,8 +249,8 @@ wv.layers.modal = wv.layers.modal || function(models, ui, config) {
         $i = 0;
 
         _.each(config.measurements, function(measurement, index) {
-            _.each(measurement.categories, function(val, key) {
-              if(val == category.id) {
+            _.each(measurement.categories, function(measurementCategory, measurementCategoryKey) {
+              if(measurementCategory == category.id) {
                 var projection = models.proj.selected.id;
                 $i++;
 
@@ -269,7 +270,7 @@ wv.layers.modal = wv.layers.modal || function(models, ui, config) {
                   .text(measurement.title);
 
                 $measurement.click(function(e) {
-                  drawMeasurements(category, measurement.id, index);
+                  drawMeasurements(category, measurement, index);
                 });
 
                 var $measurementItem = $('<li></li>').addClass('layer-category-item');
@@ -323,7 +324,7 @@ wv.layers.modal = wv.layers.modal || function(models, ui, config) {
       sortBy: [
         'order', 'name'
       ],
-      filter: '.layer-category-legacy',
+      filter: '.layer-category-all_hazards',
       masonry: {
         gutter: 10
       }
@@ -332,18 +333,20 @@ wv.layers.modal = wv.layers.modal || function(models, ui, config) {
 
     $('#layer-modal-main').prepend($nav);
 
-    $('label[for=button-filter-legacy]').addClass('nav-selected');
+    $('label[for=button-filter-all_hazards]').addClass('nav-selected');
 
   };
 
   var drawMeasurements = function(category, selectedMeasurement, selectedIndex) {
-    // console.log(category);
     $selectedCategory.empty();
     $breadcrumb.empty();
-    var $categoryList = $('<div></div>').attr('id', category.id + '-list');
+    var categoryId = category.id || "all_hazards";
+    var categoryTitle = category.title || "All Categories";
+    var $categoryList = $('<div></div>').attr('id', categoryId + '-list');
     var measurement = config.measurements[selectedMeasurement];
+    // console.log(measurement.id);
 
-    var $measurementHeader = $('<div></div>').attr('id', 'accordion-' + category.id + '-' + measurement.id);
+    var $measurementHeader = $('<div></div>').attr('id', 'accordion-' + categoryId + '-' + measurement.id);
     var $measurementTitle = $('<h3></h3>').text(measurement.title);
     var $measurementSubtitle = $('<h5></h5>').text(measurement.subtitle);
     var $sourceTabs = $('<ul></ul>');
@@ -517,8 +520,10 @@ wv.layers.modal = wv.layers.modal || function(models, ui, config) {
 
   // Show all the measurments within the hazards_all category
   var drawAllMeasurements = function() {
-    _.each(config.measurements, function(measurement, measurementKey) {
-      drawMeasurements('hazards_all', measurementKey);
+    // console.log(config.categories.all_hazards);
+    _.each(layerMeasurements, function(layerMeasurement, layerMeasurementKey) {
+      // console.log(layerMeasurement);
+      drawMeasurements(config.categories.all_hazards, layerMeasurement);
     });
   };
 
@@ -651,8 +656,8 @@ wv.layers.modal = wv.layers.modal || function(models, ui, config) {
   };
 
   var interestCssName = function(name) {
-    if (name === 'hazards and disasters') {
-      return 'legacy';
+    if (name === 'all_azards') {
+      return 'all_hazards';
     } else
       return name;
     }
