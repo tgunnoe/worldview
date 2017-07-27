@@ -37,18 +37,18 @@ wv.layers.modal = wv.layers.modal || function(models, ui, config) {
   var sizeMultiplier;
   var searchBool;
 
-  var sourceId = [];
-  var uniqueSources;
-  var measurementId = [];
-  var uniqueMeasurements;
-  var categoryId = [];
-  var uniqueCategories;
+  var layerSourceArray = [];
+  var layerSources;
+  var layerMeasurementArray = [];
+  var layerMeasurements;
+  var layerCategoryArray = [];
+  var layerCategories;
 
   //Visible Layers
   var visible = {};
 
   var init = function() {
-    // console.log(config);
+    console.log(config);
     _.each(config.layers, function(layer) {
       visible[layer.id] = true;
     });
@@ -59,7 +59,7 @@ wv.layers.modal = wv.layers.modal || function(models, ui, config) {
       .on("remove", onLayerRemoved);
     models.proj.events.on("select", drawDefaultPage);
 
-    layerUniques();
+    layerMap();
 
     //Create tiles
     render();
@@ -171,26 +171,31 @@ wv.layers.modal = wv.layers.modal || function(models, ui, config) {
   };
 
   /**
-   * var layerUniques - Find the measurements and categories for each layer.
+   * var layerMap - Map the measurements and categories to each layer.
    *
    * @return {type}  description
    */
-  var layerUniques = function() {
-    // Loop through sources and get the unqiue measurements and categories
+  var layerMap = function() {
+    // Loop through the layers object to get all layers
     _.each(config.layers, function(layer, layerName) {
-      _.each(layer.measurements, function(layerMeasurement, layerMeasurementName) {
-        _.each( config.measurements, function( val, key ) {
-          if ( layerMeasurement ) {
-            // Create array of measurements referenced in the config layers.
-            measurementId.push(key);
-            // Only output those measurements once in new array
-            uniqueMeasurements = measurementId.filter( onlyUnique );
-            // Find each category of the config layers
-            _.each(config.measurements[key].categories, function(val, key) {
-              // Create array of measurements referenced in the config layers.
-              categoryId.push(val);
+      // For each layer's measurement object...
+      _.each(layer.measurements, function(layerMeasurement, layerMeasurementKey) {
+        // ...check if any of the measurements..
+        _.each( config.measurements, function( measurement, measurementName ) {
+          // ...have a name equal to those in the layer's measurement object
+          if ( layerMeasurement === measurementName) {
+            // If it does, then create an array of the measurements
+            // referenced in the config layers.
+            layerMeasurementArray.push(measurementName);
+            // Only output measurements once in new array
+            layerMeasurements = layerMeasurementArray.filter( onlyUnique );
+            // Within the measurements object find each category of the config layers
+            _.each(config.measurements[measurementName].categories, function(measurementCategory, measurementCategoryKey) {
+              // Create array of categories referenced in the that measurment config.
+              // (Which is the measurements unique to the layers.)
+              layerCategoryArray.push(measurementCategory);
               // Only output those measurements once in new array
-              uniqueCategories = categoryId.filter( onlyUnique );
+              layerCategories = layerCategoryArray.filter( onlyUnique );
             });
           }
         });
@@ -207,7 +212,7 @@ wv.layers.modal = wv.layers.modal || function(models, ui, config) {
     $allLayers.hide();
     $nav.empty();
 
-    _.each(uniqueCategories, function(val, key) {
+    _.each(layerCategories, function(val, key) {
       var category = config.categories[val];
       if(category) {
         if (category.placement) {
@@ -351,9 +356,9 @@ wv.layers.modal = wv.layers.modal || function(models, ui, config) {
       if (layerVal.measurements == selectedMeasurement)  {
         _.each(layerVal.sources, function(sourceVal, sourceKey) {
           // Create array of measurements referenced in the config layers.
-          sourceId.push(sourceVal);
+          layerSourceArray.push(sourceVal);
           // Only output those sources once in new array
-          uniqueSources = sourceId.filter( onlyUnique );
+          layerSources = layerSourceArray.filter( onlyUnique );
 
         });
       }
@@ -361,7 +366,7 @@ wv.layers.modal = wv.layers.modal || function(models, ui, config) {
     // END FIND UNIQUE SOURCES HERE
 
     // START SOURCE OUTPUT
-    _.each(uniqueSources, function(aVal,aKey) {
+    _.each(layerSources, function(aVal,aKey) {
       var source = config.sources[aVal];
       var $sourceTab = $('<li></li>');
 
@@ -510,12 +515,11 @@ wv.layers.modal = wv.layers.modal || function(models, ui, config) {
 
   };
 
-  // Show all the measurments within the legacy-all category
+  // Show all the measurments within the hazards_all category
   var drawAllMeasurements = function() {
-
-        // _.each(config.measurements, function)
-        // drawMeasurements(category);
-
+    _.each(config.measurements, function(measurement, measurementKey) {
+      drawMeasurements('hazards_all', measurementKey);
+    });
   };
 
   // TODO: Filter layers by settings with projections equal to current projection.
