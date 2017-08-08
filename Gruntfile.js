@@ -458,20 +458,6 @@ module.exports = function(grunt) {
           template: "deploy/metadata.template.html"
         }
       },
-      new: {
-        files: [
-          {
-            expand: true,
-            cwd: "build/options/brand/pages",
-            src: "**/*.md",
-            dest: "build/options/brand/pages",
-            ext: ".html"
-          }
-        ],
-        options: {
-          template: "deploy/new.template.html"
-        }
-      }
     },
 
     mkdir: {
@@ -534,7 +520,7 @@ module.exports = function(grunt) {
         "!build/worldview-debug/web/css/wv.css",
         "!build/worldview-debug/web/js/wv.js",
         "!build/worldview-debug/web/js/ol.js",
-        "!build/worldview-debug/web/css/bulkDownload.css",
+        "!build/worldview-debug/web/css/bulkdownload.css",
         "!build/worldview-debug/web/ext/**/*"
       ],
       modules: ["web/ext/node_modules/**"],
