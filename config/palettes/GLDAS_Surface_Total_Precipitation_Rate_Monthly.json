@@ -115,7 +115,7 @@
                 ],
                 "maxLabel": ">= 5.0e-04",
                 "minLabel": "< 0.0e+00",
-                "units": "kg/m\u00b2",
+                "units": "kg/m\u00b2/s",
                 "type": "continuous",
                 "id": "GLDAS_Surface_Total_Precipitation_Rate_Monthly_0_legend"
             },
