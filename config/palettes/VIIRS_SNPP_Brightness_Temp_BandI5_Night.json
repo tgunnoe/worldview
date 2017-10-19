@@ -521,7 +521,7 @@
                 ],
                 "maxLabel": "340.0",
                 "minLabel": "180.0",
-                "units": "\u00b0K",
+                "units": "K",
                 "type": "continuous",
                 "id": "VIIRS_SNPP_Brightness_Temp_BandI5_Night_0_legend"
             },
